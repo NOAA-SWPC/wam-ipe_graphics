@@ -27,6 +27,7 @@ def plot(i):
     title_size = 10
     input_output_path = "indata"
     start_date = datetime(2020,6,1,9,0,0)
+    run_date     = start_date + timedelta(hours=3)
     current_date = start_date + timedelta(minutes=(i+1)*3)
     timestamp = datetime.strftime(current_date,"%Y%m%d_%H%M%S")
     file = "wfs.t12z.ipe03.{}.nc".format(timestamp)
@@ -48,15 +49,16 @@ def plot(i):
 
     nmf2vals = nmf2[:]
     hmf2vals = hmf2[:]
-    print(nmf2vals.max())
-    print(hmf2vals.max())
+    print("NmF2 max: {:.2e}".format(nmf2vals.max()))
+    print("HmF2 max: {:.1f}".format(hmf2vals.max()))
+
     cmap = plt.get_cmap('Blues',256)
     cmap2 = plt.get_cmap('Purples',256)
     cmap3 = plt.get_cmap('gist_ncar',256)
 
 
-    fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=proj), figsize=(16,9))
-    fig.subplots_adjust(hspace=0,wspace=0,top=0.925,left=0.1)
+    fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=proj), figsize=(16,4))
+    fig.subplots_adjust(hspace=0.01,wspace=0.01,top=2,left=0.1)
 
     ax  = axes[0]
     ax2 = axes[1]
@@ -111,7 +113,7 @@ def plot(i):
 #    cax2.xaxis.set_major_formatter(fmt)
     cax3.tick_params(labelsize=6)
 #    cax3.xaxis.set_major_formatter(fmt)
-
+    plt.suptitle("wfs.{}/{}: {}".format(run_date.strftime("%Y%m%d"), run_date.strftime("%H"), current_date.strftime("%-m/%-d/%Y %H:%MUT")),fontdict={'family':'monospace'})
 #    plt.show()
 
     plt.savefig("{}/trio_{}.png".format(input_output_path,timestamp))
