@@ -25,12 +25,12 @@ def plot(i):
     # get these from argument parameters
     nticks = 7
     title_size = 10
-    input_output_path = "indata"
-    start_date = datetime(2020,6,1,9,0,0)
+    start_date = datetime(2020,6,1,15,0,0)
     run_date     = start_date + timedelta(hours=3)
     current_date = start_date + timedelta(minutes=(i+1)*3)
+    input_output_path = "output_{}z".format(run_date.strftime("%H"))
     timestamp = datetime.strftime(current_date,"%Y%m%d_%H%M%S")
-    file = "wfs.t12z.ipe03.{}.nc".format(timestamp)
+    file = "wfs.t{}z.ipe03.{}.nc".format(run_date.strftime("%H"),timestamp)
     print(file)
     proj = ccrs.PlateCarree(central_longitude=0)
 
@@ -58,7 +58,7 @@ def plot(i):
 
 
     fig, axes = plt.subplots(1, 3, subplot_kw=dict(projection=proj), figsize=(16,4))
-    fig.subplots_adjust(hspace=0.01,wspace=0.01,top=2,left=0.1)
+    fig.subplots_adjust(hspace=0.01,wspace=0.01,top=1.3,left=0.1)
 
     ax  = axes[0]
     ax2 = axes[1]
@@ -99,9 +99,9 @@ def plot(i):
     ax2.set_global()
 
 # Now the hmf2 plot....
-    contour_plot = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(0,800,100),extend='max',transform=ccrs.PlateCarree(),cmap=cmap3,vmin=0,vmax=800)
+    contour_plot = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(0,1200,100),extend='max',transform=ccrs.PlateCarree(),cmap=cmap3,vmin=0,vmax=1200)
     cax3, kw = mpl.colorbar.make_axes(ax3,cmap=cmap,location='bottom',pad=0.05,shrink=0.7)
-    out=fig.colorbar(contour_plot,cax=cax3,ticks=np.linspace(0,800,nticks),**kw)
+    out=fig.colorbar(contour_plot,cax=cax3,ticks=np.linspace(0,1200,nticks),**kw)
     hmf2_title = ax3.text(0.5,1.05,'HmF2',fontsize=title_size,transform=ax3.transAxes,horizontalalignment='center')
     ax3.coastlines(alpha=0.2)
     ax3.gridlines(alpha=0.1)
@@ -124,7 +124,7 @@ def main():
 #    print('main')
 #    plot(0)
     with Pool(processes=4) as pool:
-        pool.map(plot, range(1005))
+        pool.map(plot, range(1018))
 
 if __name__ == '__main__':
     main()
