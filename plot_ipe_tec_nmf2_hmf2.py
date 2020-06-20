@@ -20,26 +20,27 @@ import cartopy.crs as ccrs
 from datetime import datetime,timedelta
 from multiprocessing import Pool
 import numpy as np
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-def plot(i):
+def plot(file):
     # get these from argument parameters
     nticks = 7
     title_size = 10
-    start_date = datetime(2020,6,1,15,0,0)
-    run_date     = start_date + timedelta(hours=3)
-    current_date = start_date + timedelta(minutes=(i+1)*3)
-    input_output_path = "output_{}z".format(run_date.strftime("%H"))
-    timestamp = datetime.strftime(current_date,"%Y%m%d_%H%M%S")
-    file = "wfs.t{}z.ipe03.{}.nc".format(run_date.strftime("%H"),timestamp)
     print(file)
     proj = ccrs.PlateCarree(central_longitude=0)
 
-    nc_fid = Dataset("{}/{}".format(input_output_path,file), "r", format="NETCDF4")
+    nc_fid = Dataset("{}".format(file), "r", format="NETCDF4")
     lon = nc_fid.variables['lon'] # longitude
     lat = nc_fid.variables['lat'] # latitude
     tec = nc_fid.variables['tec'] # TEC
     nmf2 = nc_fid.variables['NmF2'] # nmf2
     hmf2 = nc_fid.variables['HmF2'] # nmf2
+
+    try: current_date = datetime.strptime(nc_fid.variables['fcst_date'],"%Y%m%d_%H%M%S")
+    except : current_date = datetime.now()
+    timestamp = current_date.strftime("%Y%m%d_%H%M%S")
+    try: run_date = datetime.strptime(nc_fid.variables['init_date'],"%Y%m%d_%H%M%S")
+    except : run_date = datetime.now()
 
     latvals = lat[:]
 
@@ -116,15 +117,18 @@ def plot(i):
     plt.suptitle("wfs.{}/{}: {}".format(run_date.strftime("%Y%m%d"), run_date.strftime("%H"), current_date.strftime("%-m/%-d/%Y %H:%MUT")),fontdict={'family':'monospace'})
 #    plt.show()
 
-    plt.savefig("{}/trio_{}.png".format(input_output_path,timestamp))
+    plt.savefig("trio_{}.png".format(timestamp))
     plt.close()
 
 def main():
     # paralellize!
 #    print('main')
-#    plot(0)
-    with Pool(processes=4) as pool:
-        pool.map(plot, range(1018))
+    parser = ArgumentParser(description='plot tec, nmf2, hmf2', formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-f', '--file',   help='filename', type=str, required=True)
+    args = parser.parse_args()
+    plot(args.file)
+#    with Pool(processes=4) as pool:
+#        pool.map(plot, range(1018))
 
 if __name__ == '__main__':
     main()
