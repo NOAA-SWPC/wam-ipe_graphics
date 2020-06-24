@@ -106,21 +106,31 @@ def main():
 	print("NmF2 max: {:.2e}".format(nmf2vals.max()))
 	print("HmF2 max: {:.1f}".format(hmf2vals.max()))
 
-	# color maps
+	# light or dark scheme ....
+	            
+	# scheme = 'light'
+	scheme = 'dark'
 
-	cmap = plt.get_cmap('Blues',256)
-	cmap2 = plt.get_cmap('Reds',256)
-	cmap3 = plt.get_cmap('Greens',256)
-	# cmap3 = plt.get_cmap('gist_ncar',256)
-	# cmap = plt.get_cmap('cividis',256)
-	# cmap2 = plt.get_cmap('viridis',256)
-	# cmap3 = plt.get_cmap('jet',256)
+	# colors
 
-	# text_color = (0.9,0.9,0.9)
-	text_color = (0.,0.,0.)
-	edge_color = (0.0,0.4,0.0)
-	# background_color = (0.1,0.1,0.1)
-	background_color = (0.9,0.9,0.9)
+	if scheme == 'light':
+		cmap = plt.get_cmap('Blues',256)
+		cmap2 = plt.get_cmap('Reds',256)
+		cmap3 = plt.get_cmap('Greens',256)
+		text_color = (0.,0.,0.)
+		background_color = (0.9,0.9,0.9)
+		landcolor = (0,0,0)
+	elif scheme == 'dark':
+		cmap = plt.get_cmap('cividis',256)
+		cmap2 = plt.get_cmap('viridis',256)
+		cmap3 = plt.get_cmap('jet',256)
+		text_color = (0.9,0.9,0.9)
+		edge_color = (0.0,0.4,0.0)
+		background_color = (0.1,0.1,0.1)
+		landcolor = (1,1,1)
+
+
+	central_longitude = 0
 
 	# the main figure
 
@@ -134,7 +144,7 @@ def main():
 
 	# the cartopy projection
 
-	projection = ccrs.PlateCarree(central_longitude=0)
+	projection = ccrs.PlateCarree(central_longitude=central_longitude)
 
 	# sub plots - 2 x 2 grid
 
@@ -154,12 +164,11 @@ def main():
 	min_tec = 0.0
 	max_nmf2 = 5.
 	min_nmf2 = 0.0
-	landcolor = (1,1,1)
 
 	# TEC plot top right
 
 	ax1 = the_plots[0,1]
-	contour_plot = ax1.contourf(lonvals, latvals, tecvals, np.linspace(min_tec,max_tec,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=0), cmap=cmap)
+	contour_plot = ax1.contourf(lonvals, latvals, tecvals, np.linspace(min_tec,max_tec,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap)
 	tec_title = ax1.text(0.5,1.05,'Total Electron Content (TEC)',fontsize=title_size,transform=ax1.transAxes,horizontalalignment='center',color=text_color)
 
 	# all the colorbar stuff
@@ -189,7 +198,7 @@ def main():
 	# NMF2 plot is bottom left
 
 	ax2 = the_plots[1,0]
-	contour_plot2 = ax2.contourf(lonvals, latvals, nmf2vals, np.linspace(min_nmf2,max_nmf2,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=0), cmap=cmap2)
+	contour_plot2 = ax2.contourf(lonvals, latvals, nmf2vals, np.linspace(min_nmf2,max_nmf2,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap2)
 	nmf2_title = ax2.text(0.5,1.05,'F2 Peak Electron Density (NmF2)',fontsize=title_size,transform=ax2.transAxes,horizontalalignment='center',color=text_color)
 
 	cax2, kw = mpl.colorbar.make_axes(ax2,cmap=cmap2,pad=0.03,shrink=0.6)
@@ -206,7 +215,7 @@ def main():
 	# HMF2 plot bottom right
 
 	ax3 = the_plots[1,1]
-	contour_plot3 = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(200,1000,n_contours), extend='both', transform=ccrs.PlateCarree(central_longitude=0), cmap=cmap3)
+	contour_plot3 = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(200,1000,n_contours), extend='both', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap3)
 	hmf2_title = ax3.text(0.5,1.05,'F2 Peak Height (hmF2)',fontsize=title_size,transform=ax3.transAxes,horizontalalignment='center',color=text_color)
 
 	cax3, kw = mpl.colorbar.make_axes(ax3,cmap=cmap3,pad=0.03,shrink=0.6)
