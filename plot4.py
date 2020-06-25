@@ -87,22 +87,27 @@ def main():
 
 	# netcdf bit....
 
-	nc_fid = Dataset("/Users/george/Downloads/ipe.20130316_010000_nmf2.nc", "r", format="NETCDF4")
+	# nc_fid = Dataset("/Users/george/Downloads/ipe.20130316_010000_nmf2.nc", "r", format="NETCDF4")
+	nc_fid = Dataset("/Users/george/Downloads/wfs.t00z.ipe03.20200618_000000.nc", "r", format="NETCDF4")
 	# nc_fid = Dataset("/Users/george/Downloads/IPE_Ne.geo.202006041900.nc4", "r", format="NETCDF4")
-	nc_attrs, nc_dims, nc_vars = ncdump(nc_fid)
+
+	# nc_attrs, nc_dims, nc_vars = ncdump(nc_fid)
+
 	lon = nc_fid.variables['lon'] # longitude
 	lat = nc_fid.variables['lat'] # latitude
-	# lon = nc_fid.variables['longitude'] # longitude
-	# lat = nc_fid.variables['latitude'] # latitude
-	# alt = nc_fid.variables['altitude'] # latitude
 	tec = nc_fid.variables['tec'] # TEC
-	nmf2 = nc_fid.variables['nmf2'] # nmf2
-	hmf2 = nc_fid.variables['hmf2'] # nmf2
+	nmf2 = nc_fid.variables['NmF2'] # nmf2
+	hmf2 = nc_fid.variables['HmF2'] # nmf2
+
 	latvals = lat[:]
 	lonvals = lon[:]
 	tecvals = tec[:]
 	nmf2vals = nmf2[:] / 1.e12
 	hmf2vals = hmf2[:]
+
+	# TODO The Arrays lonvals,tec, nmf2 and hmf2 need to wrap around
+	# with a final longitude of 360.
+
 	print("NmF2 max: {:.2e}".format(nmf2vals.max()))
 	print("HmF2 max: {:.1f}".format(hmf2vals.max()))
 
@@ -168,7 +173,10 @@ def main():
 	# TEC plot top right
 
 	ax1 = the_plots[0,1]
-	contour_plot = ax1.contourf(lonvals, latvals, tecvals, np.linspace(min_tec,max_tec,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap)
+
+	contour_plot = ax1.contourf(lonvals, latvals, tecvals, np.linspace(min_tec,max_tec,n_contours),\
+		extend='max', transform=ccrs.PlateCarree(), cmap=cmap)
+
 	tec_title = ax1.text(0.5,1.05,'Total Electron Content (TEC)',fontsize=title_size,transform=ax1.transAxes,horizontalalignment='center',color=text_color)
 
 	# all the colorbar stuff
@@ -198,7 +206,10 @@ def main():
 	# NMF2 plot is bottom left
 
 	ax2 = the_plots[1,0]
-	contour_plot2 = ax2.contourf(lonvals, latvals, nmf2vals, np.linspace(min_nmf2,max_nmf2,n_contours), extend='max', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap2)
+
+	contour_plot2 = ax2.contourf(lonvals, latvals, nmf2vals, np.linspace(min_nmf2,max_nmf2,n_contours),\
+		extend='max', transform=ccrs.PlateCarree(), cmap=cmap2)
+
 	nmf2_title = ax2.text(0.5,1.05,'F2 Peak Electron Density (NmF2)',fontsize=title_size,transform=ax2.transAxes,horizontalalignment='center',color=text_color)
 
 	cax2, kw = mpl.colorbar.make_axes(ax2,cmap=cmap2,pad=0.03,shrink=0.6)
@@ -215,7 +226,10 @@ def main():
 	# HMF2 plot bottom right
 
 	ax3 = the_plots[1,1]
-	contour_plot3 = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(200,1000,n_contours), extend='both', transform=ccrs.PlateCarree(central_longitude=central_longitude), cmap=cmap3)
+
+	contour_plot3 = ax3.contourf(lonvals, latvals, hmf2vals, np.linspace(200,1000,n_contours),\
+		extend='both', transform=ccrs.PlateCarree(), cmap=cmap3)
+
 	hmf2_title = ax3.text(0.5,1.05,'F2 Peak Height (hmF2)',fontsize=title_size,transform=ax3.transAxes,horizontalalignment='center',color=text_color)
 
 	cax3, kw = mpl.colorbar.make_axes(ax3,cmap=cmap3,pad=0.03,shrink=0.6)
