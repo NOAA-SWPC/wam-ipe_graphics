@@ -14,6 +14,7 @@ from netCDF4 import Dataset
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cartopy.util as cutil
 
 
 
@@ -105,16 +106,22 @@ def main():
 	nmf2vals = nmf2[:] / 1.e12
 	hmf2vals = hmf2[:]
 
-	# TODO The Arrays lonvals,tec, nmf2 and hmf2 need to wrap around
-	# with a final longitude of 360.
+	cyclic_tecvals, cyclic_lons = cutil.add_cyclic_point(tecvals, coord=lonvals)
+	cyclic_nmf2vals, cyclic_lons = cutil.add_cyclic_point(nmf2vals, coord=lonvals)
+	cyclic_hmf2vals, cyclic_lons = cutil.add_cyclic_point(hmf2vals, coord=lonvals)
+
+	lonvals = cyclic_lons
+	tecvals = cyclic_tecvals
+	nmf2vals = cyclic_nmf2vals
+	hmf2vals = cyclic_hmf2vals
 
 	print("NmF2 max: {:.2e}".format(nmf2vals.max()))
 	print("HmF2 max: {:.1f}".format(hmf2vals.max()))
 
 	# light or dark scheme ....
 	            
-	# scheme = 'light'
-	scheme = 'dark'
+	scheme = 'light'
+	# scheme = 'dark'
 
 	# colors
 
@@ -123,6 +130,7 @@ def main():
 		cmap2 = plt.get_cmap('Reds',256)
 		cmap3 = plt.get_cmap('Greens',256)
 		text_color = (0.,0.,0.)
+		edge_color = (0.0,0.4,0.0)
 		background_color = (0.9,0.9,0.9)
 		landcolor = (0,0,0)
 	elif scheme == 'dark':
