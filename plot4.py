@@ -5,16 +5,21 @@ Filled contours
 An example of contourf on manufactured data.
 
 """
-
+from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 from netCDF4 import Dataset
-
+import glob
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.util as cutil
+from datetime import datetime,timedelta
+from multiprocessing import Pool
+import numpy as np
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from datetime import datetime,timedelta
 
 
 
@@ -93,6 +98,18 @@ def main():
 	# nc_fid = Dataset("/Users/george/Downloads/IPE_Ne.geo.202006041900.nc4", "r", format="NETCDF4")
 
 	# nc_attrs, nc_dims, nc_vars = ncdump(nc_fid)
+	fcst_date = nc_fid.getncattr('fcst_date')
+	year_str = fcst_date[0:4]
+	month_str = fcst_date[4:6]
+	day_str = fcst_date[6:8]
+	hour_str = fcst_date[9:11]
+	minute_str = fcst_date[11:13]
+	fcst_timestamp = year_str + '-' + month_str + '-' + day_str + ' ' + hour_str + ':' + minute_str
+	print(fcst_timestamp)
+	run_type = nc_fid.getncattr('run_type')
+	model_run_date = nc_fid.getncattr('init_date')
+	run_date_str = model_run_date[0:8]
+	cycle_str = fcst_date[9:11]
 
 	lon = nc_fid.variables['lon'] # longitude
 	lat = nc_fid.variables['lat'] # latitude
@@ -120,8 +137,8 @@ def main():
 
 	# light or dark scheme ....
 	            
-	scheme = 'light'
-	# scheme = 'dark'
+	# scheme = 'light'
+	scheme = 'dark'
 
 	# colors
 
@@ -150,9 +167,10 @@ def main():
 	fig=plt.figure(figsize=(16,9),facecolor=background_color)
 
 	main_title_size = 20
-	main_title = fig.text(0.02,0.89,'2020-06-04 12:15 UTC',fontsize=48,horizontalalignment='left',color=text_color)
+	main_title = fig.text(0.02,0.89,fcst_timestamp + 'UTC',fontsize=48,horizontalalignment='left',color=text_color)
 	main_title = fig.text(0.02,0.82,'Global Ionosphere',fontsize=32,horizontalalignment='left',color=text_color)
-	main_title = fig.text(0.04,0.76,'Model: WAM-IPE',fontsize=20,horizontalalignment='left',color=text_color)
+	main_title = fig.text(0.03,0.76,'Model: WAM-IPE     Run Type: ' + run_type,fontsize=20,horizontalalignment='left',color=text_color)
+	main_title = fig.text(0.03,0.70,'Run: ' + run_date_str + ' ' + cycle_str +'z',fontsize=20,horizontalalignment='left',color=text_color)
 	main_title = fig.text(0.02,0.025,'Space Weather Prediction Center',fontsize=16,horizontalalignment='left',color=text_color)
 
 	# the cartopy projection
@@ -173,9 +191,9 @@ def main():
 	ax0 = the_plots[0,0]
 	ax0.set_visible(False)
 
-	max_tec = 100.
+	max_tec = 30.
 	min_tec = 0.0
-	max_nmf2 = 5.
+	max_nmf2 = 2.
 	min_nmf2 = 0.0
 
 	# TEC plot top right
