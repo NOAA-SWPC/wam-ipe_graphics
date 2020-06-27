@@ -51,24 +51,25 @@ runtype_var: run_type
 projection:
   type: PlateCarree
   central_longitude: 0
-  rotating: true
+  rotating: false
   rotating_var: fcst_date
 
 figsize:
   - 16
   - 9
 
-# nrows*ncols (shape[0]*shape[1]) should rouhly correspond to the
-# total number of plots
+# nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
 shape:
   - 2
   - 2
 
+# ordering of plots goes as if you were reading text: left to right, and
+# then top to bottom
 plots:
   - visible: false
       
   - visible: true
-    title: Total Electron Content (TEC)
+    title: "Total Electron Content (TEC)"
     variable: tec
     cbar_label: "TECu"
     nticks: 6
@@ -79,7 +80,7 @@ plots:
     extend: max
 
   - visible: true
-    title: F2 Peak Electron Density (NmF2)
+    title: "F2 Peak Electron Density (NmF2)"
     variable: NmF2
     cbar_label: "$10^{12}$ m$^{-3}$"
     nticks: 5
@@ -90,7 +91,7 @@ plots:
     extend: max
   
   - visible: true
-    title: F2 Peak Height (HmF2)
+    title: "F2 Peak Height (HmF2)"
     variable: HmF2
     cbar_label: "km"
     nticks: 5
