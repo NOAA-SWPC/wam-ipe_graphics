@@ -15,6 +15,7 @@ from multiprocessing import Pool
 import numpy as np
 import yaml
 import re
+import itertools
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 def replace_all(string, opt, nc_fid):
@@ -150,10 +151,9 @@ def main():
     try:
         opt = yaml.load(open(args.config),Loader=yaml.FullLoader)
         if args.path != "":
-            with Pool(processes=args.procceses) as p:
-                files = glob("{}/{}*.nc")
-                f = lambda i: plot(files[i], opt, args.outpath)
-                p.map(f,range(len(files)))
+            with Pool(processes=args.tasks) as p:
+                files = glob.glob("{}/{}*.nc".format(args.path,args.prefix))
+                p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath)))
         else:
             plot(args.file, opt, args.outpath)
     except Exception as e:
