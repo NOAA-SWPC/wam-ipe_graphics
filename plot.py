@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset
 import glob
+from math import pi
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.util as cutil
@@ -86,7 +87,17 @@ def plot(file, opt, outpath='.'):
 
         try:
             # get data and add cyclic point
-            vals = nc_fid.variables[plot['variable']][:] * plot['scale']
+            if plot['variable'] == "__MUF__":
+                hmf2 = nc_fid.variables[plot['hmf2_var']][:]
+                nmf2 = nc_fid.variables[plot['nmf2_var']][:]
+                ut = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
+                loctime = ( (ut.hour + ut.minute / 60) + lon / 15 ) % 24
+                vals  = 1490 / (hmf2 + 176)
+                vals -= 0.6*np.sin((loctime-5) * pi/12)
+                vals *= np.sqrt(nmf2) * 1.11355287e-5
+            else:
+                vals = nc_fid.variables[plot['variable']][:]
+            vals *= plot['scale']
             vals, clon = cutil.add_cyclic_point(vals, coord=lon)
 
             # plot
