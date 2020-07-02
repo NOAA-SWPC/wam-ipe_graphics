@@ -1,0 +1,127 @@
+# VISUALIZATION OPTIONS
+scheme: dark
+title_size: 20
+ncontours: 20
+latvar: lat
+lonvar: lon
+cbar_label_size: 14
+axis_label_size: 12
+
+# If you want to use metadata from the netcdf file, you can enclose values
+# in double underscores (e.g. __myvalue__). There needs to be a 
+# corresponding yaml value such as 
+# myvalue_var: var_name_in_netcdf
+#
+# Additionally, if you want to format a datetime out of the metadata,
+# you can change the name to end in "_ts" (e.g. __myvalue_ts__). You
+# must then set
+# metadata_ts_format: "TIMESTAMP_FORMAT"
+# myvalue_ts_var: netcdf_var_name_which_contains_timestamp_string
+# myvalue_ts_format: "TIMESTAMP_FORMAT"
+# where TIMESTAMP_FORMAT adheres to the datetime format codes:
+# https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+#
+# metadata_ts_format is used globally for all _ts variables input
+# from the NetCDF file, and myvalue_ts_format is passed to strftime for
+# output formatting purposes.
+
+# I/O FORMATTING
+output_format: SWX_WAM_IPE___output_ts__f__cyc_ts__.png
+
+metadata_ts_format: "%Y%m%d_%H%M%S"
+
+fcst_ts_var: fcst_date
+fcst_ts_format: "%b %-d %Y %H:%M UTC"
+
+init_ts_var: init_date
+init_ts_format: "%b %-d %Y %H UTC"
+
+cyc_ts_var: init_date
+cyc_ts_format: "%H"
+
+output_ts_var: fcst_date
+output_ts_format: "%Y%m%d%H%M"
+
+runtype_var: run_type
+
+# PROJECTION
+# only valid type is PlateCarree for now
+# if rotating: true, then you need rotating_var that adheres to 
+# metadata_ts_format; see documentation above.
+projection:
+  type: PlateCarree
+  central_longitude: 0
+  rotating: false
+  rotating_var: fcst_date
+
+figsize:
+  - 16
+  - 9
+
+# nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
+shape:
+  - 2
+  - 2
+
+# ordering of plots goes as if you were reading text: left to right, and
+# then top to bottom
+plots:
+  - visible: false
+      
+  - visible: true
+    title: "Total Electron Content (TEC)"
+    variable: tec
+    cbar_label: "TECu"
+    nticks: 6
+    cmap: cividis
+    scale: 1.0
+    min: 0.
+    max: 30.
+    extend: max
+
+  - visible: true
+    title: "F2 Peak Electron Density (NmF2)"
+    variable: NmF2
+    cbar_label: "$10^{12}$ m$^{-3}$"
+    nticks: 5
+    cmap: viridis
+    scale: 1.e-12
+    min: 0.
+    max: 2.
+    extend: max
+  
+  - visible: true
+    title: "Maximum Usable Frequency (MUF)"
+    variable: "__MUF__"
+    nmf2_var: NmF2
+    hmf2_var: HmF2
+    ut_var: fcst_date
+    cbar_label: "MHz"
+    nticks: 6
+    cmap: jet
+    scale: 1.0
+    min: 0
+    max: 50
+    extend: max
+
+texts:
+  - text: "Valid at: __fcst_ts__"
+    x_loc: 0.25
+    y_loc: 0.78
+    size: 24
+    align: center
+  - text: "Global Ionosphere"
+    x_loc: 0.25
+    y_loc: 0.73
+    size: 18
+    align: center
+  - text: "Model: WAM-IPE (__runtype__) Init: __init_ts__"
+    x_loc: 0.25
+    y_loc: 0.68
+    size: 18
+    align: center
+  - text: "Space Weather Prediction Center"
+    x_loc: 0.015
+    y_loc: 0.03
+    size: 12
+    align: left
