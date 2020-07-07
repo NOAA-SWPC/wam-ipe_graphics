@@ -6,6 +6,7 @@ latvar: lat
 lonvar: lon
 cbar_label_size: 14
 axis_label_size: 12
+fontfamily: monospace
 
 # If you want to use metadata from the netcdf file, you can enclose values
 # in double underscores (e.g. __myvalue__). There needs to be a 
