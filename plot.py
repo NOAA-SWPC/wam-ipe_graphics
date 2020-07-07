@@ -71,7 +71,9 @@ def plot(file, opt, outpath='.'):
         raise
 
     plots = fig.subplots(opt['shape'][0], opt['shape'][1], \
-                         subplot_kw=dict(projection=proj)).flatten()
+                         subplot_kw=dict(projection=proj))
+    if type(plots) == np.ndarray: plots = plots.flatten()
+    else: plots = [plots]
     fig.subplots_adjust(left=0.06, right=0.98, bottom=0.06, top=0.95, wspace=0.1, hspace=0.15)
 
     # now make the plots
@@ -112,7 +114,7 @@ def plot(file, opt, outpath='.'):
             # all the colorbar stuff
             cax, kw = mpl.colorbar.make_axes(ax,cmap=cmap,pad=0.03,shrink=0.6)
             cb=fig.colorbar(contour_plot,cax=cax,ticks=tick_linspace,**kw)
-            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'])
+            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'], fontfamily=opt['fontfamily'])
             cb.outline.set_edgecolor(edge_color)
             plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color=text_color)
 
@@ -128,13 +130,13 @@ def plot(file, opt, outpath='.'):
             gl.ylines = False
             gl.xformatter = LONGITUDE_FORMATTER
             gl.yformatter = LATITUDE_FORMATTER
-            gl.xlabel_style = {'size': opt['axis_label_size'], 'color': text_color}
-            gl.ylabel_style = {'size': opt['axis_label_size'], 'color': text_color}
+            gl.xlabel_style = {'size': opt['axis_label_size'], 'color': text_color, 'fontfamily': opt['fontfamily']}
+            gl.ylabel_style = {'size': opt['axis_label_size'], 'color': text_color, 'fontfamily': opt['fontfamily']}
 
             #ax.set_global()
 
             # plot title
-            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color)
+            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color, fontfamily=opt['fontfamily'])
 
         except Exception as e:
             print('Error while drawing plot {}'.format(i))
@@ -145,7 +147,9 @@ def plot(file, opt, outpath='.'):
     if 'texts' in opt:
         for text in opt['texts']:
             output_string = replace_all(text['text'], opt, nc_fid)
-            fig.text(text['x_loc'],text['y_loc'],output_string,fontsize=text['size'],horizontalalignment=text['align'],color=text_color)
+            fig.text(text['x_loc'], text['y_loc'], output_string, \
+                     fontsize=text['size'], horizontalalignment=text['align'], \
+                     color=text_color, fontfamily=opt['fontfamily'])
 
 #    plt.show()
     plt.savefig("{}/{}".format(outpath,replace_all(opt['output_format'], opt, nc_fid)), facecolor=background_color)

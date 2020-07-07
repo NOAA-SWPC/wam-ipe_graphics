@@ -27,7 +27,7 @@ fontfamily: monospace
 # output formatting purposes.
 
 # I/O FORMATTING
-output_format: SWX_WAM_IPE___output_ts__f__cyc_ts__.png
+output_format: O_N2_global___output_ts__f__cyc_ts__.png
 
 metadata_ts_format: "%Y%m%d_%H%M%S"
 
@@ -68,42 +68,27 @@ shape:
 # then top to bottom
 plots:
   - visible: false
-      
   - visible: true
-    title: "Total Electron Content (TEC)"
-    variable: tec
-    cbar_label: "TECu"
+    title: "400km Neutral Density"
+    variable: iss_mass_density
+    cbar_label: "kg/m$^3$"
     nticks: 6
-    cmap: cividis
-    scale: 1.0
-    min: 0.
-    max: 30.
-    extend: max
-
-  - visible: true
-    title: "F2 Peak Electron Density (NmF2)"
-    variable: NmF2
-    cbar_label: "$10^{12}$ m$^{-3}$"
-    nticks: 5
-    cmap: viridis
-    scale: 1.e-12
-    min: 0.
-    max: 2.
-    extend: max
-  
-  - visible: true
-    title: "Maximum Usable Frequency (MUF)"
-    variable: "__MUF__"
-    nmf2_var: NmF2
-    hmf2_var: HmF2
-    ut_var: fcst_date
-    cbar_label: "MHz"
-    nticks: 6
-    cmap: jet
-    scale: 1.0
     min: 0
-    max: 50
-    extend: max
+    max: 1.5e-11
+    cmap: plasma
+    extend: both
+    scale: 1.0
+  - visible: false
+  - visible: true
+    title: "O/N$_2$ Ratio"
+    variable: o_n2_ratio
+    cbar_label: "ratio"
+    nticks: 6
+    cmap: inferno
+    scale: 1.0
+    min: 0.4
+    max: 1.2
+    extend: both
 
 texts:
   - text: "Valid at: __fcst_ts__"
@@ -111,7 +96,7 @@ texts:
     y_loc: 0.78
     size: 24
     align: center
-  - text: "Global Ionosphere"
+  - text: "Neutral Atmosphere"
     x_loc: 0.25
     y_loc: 0.73
     size: 18
