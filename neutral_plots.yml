@@ -71,13 +71,23 @@ plots:
   - visible: true
     title: "400km Neutral Density"
     variable: iss_mass_density
-    cbar_label: "kg/m$^3$"
-    nticks: 6
-    min: 0
-    max: 1.5e-11
-    cmap: plasma
-    extend: both
-    scale: 1.0
+    cbar_label: "10$^{-11}$ kg/m$^3$"
+    nticks: 7
+    cmap: inferno
+    scale: 1.e+11
+    min: 0.0
+    max: 0.6
+    extend: max
+#  - visible: true
+#    title: "400km Neutral Density"
+#    variable: o_n2_ratio
+#    cbar_label: "kg/m$^3$"
+#    nticks: 6
+#    cmap: plasma
+#    scale: 1.0
+#    min: 0
+#    max: 1.5e-11
+#    extend: both
   - visible: false
   - visible: true
     title: "O/N$_2$ Ratio"
@@ -86,7 +96,7 @@ plots:
     nticks: 6
     cmap: inferno
     scale: 1.0
-    min: 0.4
+    min: 0.2
     max: 1.2
     extend: both
 

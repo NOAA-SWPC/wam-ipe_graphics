@@ -99,10 +99,12 @@ def plot(file, opt, outpath='.'):
                 vals *= np.sqrt(nmf2) * 1.11355287e-5
             else:
                 vals = nc_fid.variables[plot['variable']][:]
-            vals *= plot['scale']
-            vals, clon = cutil.add_cyclic_point(vals, coord=lon)
             print(vals.max())
             print(vals.min())
+            vals *= plot['scale']
+            print(vals.max())
+            print(vals.min())
+            vals, clon = cutil.add_cyclic_point(vals, coord=lon)
 
             # plot
             cmap = plt.get_cmap(plot['cmap'],256)
