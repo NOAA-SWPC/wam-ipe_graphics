@@ -26,8 +26,13 @@ fontfamily: monospace
 # from the NetCDF file, and myvalue_ts_format is passed to strftime for
 # output formatting purposes.
 
+# Other reserved values:
+# __plot_vars__: the NetCDF variables plotted joined by "-"
+
 # I/O FORMATTING
-output_format: O_N2_global___output_ts__f__cyc_ts__.png
+# note output_format will have everything but the extension upper-cased
+
+output_format: __runtype___WAM05_GLOBAL___plot_vars_____initoutput_ts_____fcstoutput_ts__.png
 
 metadata_ts_format: "%Y%m%d_%H%M%S"
 
@@ -40,8 +45,11 @@ init_ts_format: "%b %-d %Y %H UTC"
 cyc_ts_var: init_date
 cyc_ts_format: "%H"
 
-output_ts_var: fcst_date
-output_ts_format: "%Y%m%d%H%M"
+initoutput_ts_var: init_date
+initoutput_ts_format: "%Y%m%dT%H%M"
+
+fcstoutput_ts_var: fcst_date
+fcstoutput_ts_format: "%Y%m%dT%H%M"
 
 runtype_var: run_type
 

@@ -26,8 +26,13 @@ fontfamily: monospace
 # from the NetCDF file, and myvalue_ts_format is passed to strftime for
 # output formatting purposes.
 
+# Other reserved values:
+# __plot_vars__: the NetCDF variables plotted joined by "-"
+
 # I/O FORMATTING
-output_format: SWX_WAM_IPE___output_ts__f__cyc_ts__.png
+# note output_format will have everything but the extension upper-cased
+
+output_format: __runtype___IPE05_GLOBAL___plot_vars_____initoutput_ts_____fcstoutput_ts__.png
 
 metadata_ts_format: "%Y%m%d_%H%M%S"
 

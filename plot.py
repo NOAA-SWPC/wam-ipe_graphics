@@ -25,7 +25,11 @@ def replace_all(string, opt, nc_fid):
     return string
 
 def replace_text(string, replace_text, opt, nc_fid):
-    if replace_text[-3:] == '_ts':
+    if replace_text == "plot_vars":
+        output = "-".join( \
+                      [plot['variable'].upper() for plot in opt['plots'] \
+                      if plot['visible'] == True ])
+    elif replace_text[-3:] == '_ts':
         dt = datetime.strptime(nc_fid.getncattr(opt['{}_var'.format(replace_text)]), \
                          opt['metadata_ts_format'])
         output = dt.strftime(opt['{}_format'.format(replace_text)])
@@ -60,7 +64,8 @@ def plot(file, opt, outpath='.'):
     fig = plt.figure(figsize=opt['figsize'], facecolor=background_color)
     if opt['projection']['type'] == 'PlateCarree':
         if opt['projection']['rotating']:
-            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['rotating_var']),opt['metadata_ts_format'])
+            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['rotating_var']), \
+                                   opt['metadata_ts_format'])
             central_longitude = -(dt.hour*60+dt.minute)*360/(60*24)
             proj = ccrs.PlateCarree(central_longitude=opt['projection']['central_longitude']+central_longitude)
         else:
@@ -99,11 +104,8 @@ def plot(file, opt, outpath='.'):
                 vals *= np.sqrt(nmf2) * 1.11355287e-5
             else:
                 vals = nc_fid.variables[plot['variable']][:]
-            print(vals.max())
-            print(vals.min())
+
             vals *= plot['scale']
-            print(vals.max())
-            print(vals.min())
             vals, clon = cutil.add_cyclic_point(vals, coord=lon)
 
             # plot
@@ -116,7 +118,8 @@ def plot(file, opt, outpath='.'):
             # all the colorbar stuff
             cax, kw = mpl.colorbar.make_axes(ax,cmap=cmap,pad=0.03,shrink=0.6)
             cb=fig.colorbar(contour_plot,cax=cax,ticks=tick_linspace,**kw)
-            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'], fontfamily=opt['fontfamily'])
+            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'], \
+                         fontfamily=opt['fontfamily'])
             cb.outline.set_edgecolor(edge_color)
             plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color=text_color)
 
@@ -132,13 +135,16 @@ def plot(file, opt, outpath='.'):
             gl.ylines = False
             gl.xformatter = LONGITUDE_FORMATTER
             gl.yformatter = LATITUDE_FORMATTER
-            gl.xlabel_style = {'size': opt['axis_label_size'], 'color': text_color, 'fontfamily': opt['fontfamily']}
-            gl.ylabel_style = {'size': opt['axis_label_size'], 'color': text_color, 'fontfamily': opt['fontfamily']}
+            label_style = {'size': opt['axis_label_size'], 'color': text_color, \
+                           'fontfamily': opt['fontfamily']}
+            gl.xlabel_style = label_style
+            gl.ylabel_style = label_style
 
             #ax.set_global()
 
             # plot title
-            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color, fontfamily=opt['fontfamily'])
+            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color, \
+                         fontfamily=opt['fontfamily'])
 
         except Exception as e:
             print('Error while drawing plot {}'.format(i))
@@ -154,7 +160,10 @@ def plot(file, opt, outpath='.'):
                      color=text_color, fontfamily=opt['fontfamily'])
 
 #    plt.show()
-    plt.savefig("{}/{}".format(outpath,replace_all(opt['output_format'], opt, nc_fid)), facecolor=background_color)
+    filename = [s.upper() for s in replace_all(opt['output_format'], opt, nc_fid).split(".")]
+    filename[-1] = filename[-1].lower()
+    filename = ".".join(filename)
+    plt.savefig("{}/{}".format(outpath,filename), facecolor=background_color)
     plt.close()
 
 def main():
@@ -162,16 +171,16 @@ def main():
     parser.add_argument('-c', '--config',  help='yaml config', type=str, required=True)
     parser.add_argument('-f', '--file',    help='filename', type=str, default='')
     parser.add_argument('-p', '--path',    help='path to files (also requires -r, overrides -f)', type=str, default='')
-    parser.add_argument('-r', '--prefix',  help='file prefix (also requires -p) -- will plot all path/prefix*.nc files', type=str, default='')
+    parser.add_argument('-r', '--prefix',  help='file prefix (used with -p) -- will plot all path/prefix*.nc files', type=str, default='')
     parser.add_argument('-t', '--tasks',   help='parallel plotting tasks (only used with -p)', type=int, default=1)
     parser.add_argument('-o', '--outpath', help='output path', type=str, default='.')
     args = parser.parse_args()
 
     try:
-        opt = yaml.load(open(args.config),Loader=yaml.FullLoader)
+        opt = yaml.load(open(args.config), Loader=yaml.FullLoader)
         if args.path != "":
             with Pool(processes=args.tasks) as p:
-                files = glob.glob("{}/{}*.nc".format(args.path,args.prefix))
+                files = glob.glob("{}/{}*.nc".format(args.path, args.prefix))
                 p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath)))
         else:
             plot(args.file, opt, args.outpath)
