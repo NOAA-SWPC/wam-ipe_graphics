@@ -48,6 +48,12 @@ cyc_ts_format: "%H"
 output_ts_var: fcst_date
 output_ts_format: "%Y%m%d%H%M"
 
+initoutput_ts_var: init_date
+initoutput_ts_format: "%Y%m%dT%H%M"
+
+fcstoutput_ts_var: fcst_date
+fcstoutput_ts_format: "%Y%m%dT%H%M"
+
 runtype_var: run_type
 
 # PROJECTION
