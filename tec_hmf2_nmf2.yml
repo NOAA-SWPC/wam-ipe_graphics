@@ -29,10 +29,11 @@ fontfamily: monospace
 # Other reserved values:
 # __plot_vars__: the NetCDF variables plotted joined by "-"
 
-# I/O FORMATTING
-# note output_format will have everything but the extension upper-cased
+# if you format your variable in all uppercase (e.g. __MYVALUE__), the output
+# will be all uppercase as well, but the reference __myvalue_var__ should always
+# be lowercase.
 
-output_format: __runtype___IPE05_GLOBAL___plot_vars_____initoutput_ts_____fcstoutput_ts__.png
+output_format: __RUNTYPE_____MODEL____CADENCE___GLOBAL___PLOT_VARS_____INITOUTPUT_TS_____FCSTOUTPUT_TS__.png
 
 metadata_ts_format: "%Y%m%d_%H%M%S"
 
@@ -55,6 +56,10 @@ fcstoutput_ts_var: fcst_date
 fcstoutput_ts_format: "%Y%m%dT%H%M"
 
 runtype_var: run_type
+
+model_var: model
+
+cadence_var: cadence
 
 # PROJECTION
 # only valid type is PlateCarree for now
@@ -124,7 +129,7 @@ texts:
     y_loc: 0.73
     size: 18
     align: center
-  - text: "Model: WAM-IPE (__runtype__) Init: __init_ts__"
+  - text: "Model: WAM-IPE (__RUNTYPE__) Init: __init_ts__"
     x_loc: 0.25
     y_loc: 0.68
     size: 18

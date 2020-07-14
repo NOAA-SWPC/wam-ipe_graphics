@@ -25,17 +25,21 @@ def replace_all(string, opt, nc_fid):
     return string
 
 def replace_text(string, replace_text, opt, nc_fid):
-    if replace_text == "plot_vars":
+    if replace_text.lower() == "plot_vars":
         output = "-".join( \
-                      [plot['variable'].upper() for plot in opt['plots'] \
+                      [plot['variable'].strip('_') for plot in opt['plots'] \
                       if plot['visible'] == True ])
-    elif replace_text[-3:] == '_ts':
-        dt = datetime.strptime(nc_fid.getncattr(opt['{}_var'.format(replace_text)]), \
+    elif replace_text[-3:].lower() == '_ts':
+        dt = datetime.strptime(nc_fid.getncattr(opt['{}_var'.format(replace_text.lower())]), \
                          opt['metadata_ts_format'])
-        output = dt.strftime(opt['{}_format'.format(replace_text)])
+        output = dt.strftime(opt['{}_format'.format(replace_text.lower())])
     else:
-        output = nc_fid.getncattr(opt['{}_var'.format(replace_text)])
-    return string.replace('__{}__'.format(replace_text), output)
+        output = nc_fid.getncattr(opt['{}_var'.format(replace_text.lower())])
+
+    if replace_text.isupper():
+        return string.replace('__{}__'.format(replace_text), output.upper())
+    else:
+        return string.replace('__{}__'.format(replace_text), output)
 
 def plot(file, opt, outpath='.'):
 
