@@ -174,7 +174,7 @@ def main():
     parser = ArgumentParser(description='plot tec, nmf2, hmf2', formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config',  help='yaml config', type=str, required=True)
     parser.add_argument('-f', '--file',    help='filename', type=str, default='')
-    parser.add_argument('-p', '--path',    help='path to files (also requires -r, overrides -f)', type=str, default='')
+    parser.add_argument('-p', '--path',    help='path to files (also requires -r, overrides -f)', type=str, default='./')
     parser.add_argument('-r', '--prefix',  help='file prefix (used with -p) -- will plot all path/prefix*.nc files', type=str, default='')
     parser.add_argument('-t', '--tasks',   help='parallel plotting tasks (only used with -p)', type=int, default=1)
     parser.add_argument('-o', '--outpath', help='output path', type=str, default='.')
