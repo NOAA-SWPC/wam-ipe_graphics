@@ -1,0 +1,156 @@
+# VISUALIZATION OPTIONS
+scheme: dark
+title_size: 20
+ncontours: 20
+latvar: lat
+lonvar: lon
+cbar_label_size: 14
+axis_label_size: 12
+fontfamily: monospace
+
+# If you want to use metadata from the netcdf file, you can enclose values
+# in double underscores (e.g. __myvalue__). There needs to be a 
+# corresponding yaml value such as 
+# myvalue_var: var_name_in_netcdf
+#
+# Additionally, if you want to format a datetime out of the metadata,
+# you can change the name to end in "_ts" (e.g. __myvalue_ts__). You
+# must then set
+# metadata_ts_format: "TIMESTAMP_FORMAT"
+# myvalue_ts_var: netcdf_var_name_which_contains_timestamp_string
+# myvalue_ts_format: "TIMESTAMP_FORMAT"
+# where TIMESTAMP_FORMAT adheres to the datetime format codes:
+# https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+#
+# metadata_ts_format is used globally for all _ts variables input
+# from the NetCDF file, and myvalue_ts_format is passed to strftime for
+# output formatting purposes.
+
+# Other reserved values:
+# __plot_vars__: the NetCDF variables plotted joined by "-"
+
+# if you format your variable in all uppercase (e.g. __MYVALUE__), the output
+# will be all uppercase as well, but the reference __myvalue_var__ should always
+# be lowercase.
+
+output_format: __RUNTYPE_____MODEL____CADENCE___GLOBAL___PLOT_VARS_____INITOUTPUT_TS_____FCSTOUTPUT_TS__.png
+
+metadata_ts_format: "%Y%m%d_%H%M%S"
+
+fcst_ts_var: fcst_date
+fcst_ts_format: "%b %-d %Y %H:%M UTC"
+
+init_ts_var: init_date
+init_ts_format: "%b %-d %Y %H UTC"
+
+cyc_ts_var: init_date
+cyc_ts_format: "%H"
+
+output_ts_var: fcst_date
+output_ts_format: "%Y%m%d%H%M"
+
+initoutput_ts_var: init_date
+initoutput_ts_format: "%Y%m%dT%H%M"
+
+fcstoutput_ts_var: fcst_date
+fcstoutput_ts_format: "%Y%m%dT%H%M"
+
+runtype_var: run_type
+
+model_var: model
+
+cadence_var: cadence
+
+# PROJECTION
+# only valid type is PlateCarree for now
+# if rotating: true, then you need rotating_var that adheres to 
+# metadata_ts_format; see documentation above.
+projection:
+  type: PlateCarree
+  central_longitude: 0
+  rotating: false
+  rotating_var: fcst_date
+
+figsize:
+  - 16
+  - 9
+
+# nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
+shape:
+  - 2
+  - 2
+
+# ordering of plots goes as if you were reading text: left to right, and
+# then top to bottom
+plots:
+  - visible: false
+      
+  - visible: true
+    title: "Maximum Usable Frequency (MUF)"
+    variable: "__MUF__"
+    nmf2_var: NmF2
+    hmf2_var: HmF2
+    ut_var: fcst_date
+    cbar_label: "MHz"
+    nticks: 6
+    cmap: plasma
+    scale: 1.0
+    min: 0
+    max: 50
+    extend: max
+
+  - visible: true
+    title: "Maximum Usable Frequency (MUF) Mean"
+    variable: "__MUF__"
+    type: mean
+    arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
+    arch_file_fmt: "ipe05.%Y%m%d_%H%M%S.nc"
+    nmf2_var: NmF2
+    hmf2_var: HmF2
+    ut_var: fcst_date
+    cbar_label: "MHz"
+    nticks: 6
+    cmap: plasma
+    scale: 1.0
+    min: 0
+    max: 50
+    extend: max
+
+  - visible: true
+    title: "Maximum Usable Frequency (MUF) Anomaly"
+    variable: "__MUF__"
+    type: anomaly
+    arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
+    arch_file_fmt: "ipe05.%Y%m%d_%H%M%S.nc"
+    nmf2_var: NmF2
+    hmf2_var: HmF2
+    ut_var: fcst_date
+    cbar_label: "MHz"
+    nticks: 6
+    cmap: bwr
+    scale: 1.0
+    min: -10
+    max: 10
+    extend: both
+
+texts:
+  - text: "Valid at: __fcst_ts__"
+    x_loc: 0.25
+    y_loc: 0.78
+    size: 24
+    align: center
+  - text: "Global Ionosphere"
+    x_loc: 0.25
+    y_loc: 0.73
+    size: 18
+    align: center
+  - text: "Model: WAM-IPE (__RUNTYPE__) Init: __init_ts__"
+    x_loc: 0.25
+    y_loc: 0.68
+    size: 18
+    align: center
+  - text: "Space Weather Prediction Center"
+    x_loc: 0.015
+    y_loc: 0.03
+    size: 12
+    align: left

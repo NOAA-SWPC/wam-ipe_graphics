@@ -11,13 +11,62 @@ import cartopy.crs as ccrs
 import cartopy.util as cutil
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from datetime import datetime
+from datetime import datetime, timedelta
 from multiprocessing import Pool
 import numpy as np
 import yaml
 import re
 import itertools
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
+def get_full_archive_path(archive_path, dt, formatter):
+    search_dt = dt.replace(minute=0, second=0)
+
+    if   search_dt.hour < 3:
+        search_dt = search_dt.replace(hour=0)
+    elif search_dt.hour < 9:
+        search_dt = search_dt.replace(hour=6)
+    elif search_dt.hour < 15:
+        search_dt = search_dt.replace(hour=12)
+    elif search_dt.hour < 21:
+        search_dt = search_dt.replace(hour=18)
+    else:
+        search_dt = search_dt.replace(day=search_dt.day+1, hour=0)
+
+    return '{}/{}'.format(archive_path, search_dt.strftime(formatter))
+
+def get_n_day_mean(archive_path, plot, opt, dt, days=30):
+    variable = plot['variable']
+    archive_path_fmt = plot['arch_path_fmt']
+    archive_file_fmt = plot['arch_file_fmt']
+
+    for td in range(1,days+1):
+        search_dt = dt - timedelta(days=td)
+        path = get_full_archive_path(archive_path, search_dt, archive_path_fmt)
+        file = '{}{}'.format(path, search_dt.strftime(archive_file_fmt))
+        try:
+            ds = Dataset(file)
+        except:
+            pass
+        if td == 1:
+            if variable == '__MUF__':
+                sum_data = get_muf(ds, plot, opt)
+            else:
+                sum_data = ds.variables[variable][:]
+            count = 1
+            ds.close()
+        else:
+            try:
+                if variable == '__MUF__':
+                    sum_data += get_muf(ds, plot, opt)
+                else:
+                    sum_data += ds.variables[variable][:]
+                count += 1
+                ds.close()
+            except:
+                pass
+    print('count',count)
+    return sum_data/count
 
 def replace_all(string, opt, nc_fid):
     for r in re.findall(r'__([^_].*?[^_])__',string):
@@ -41,7 +90,18 @@ def replace_text(string, replace_text, opt, nc_fid):
     else:
         return string.replace('__{}__'.format(replace_text), output)
 
-def plot(file, opt, outpath='.'):
+def get_muf(nc_fid, plot, opt):
+    lon = nc_fid.variables[opt['lonvar']][:]
+    hmf2 = nc_fid.variables[plot['hmf2_var']][:]
+    nmf2 = nc_fid.variables[plot['nmf2_var']][:]
+    ut = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
+    loctime = ( (ut.hour + ut.minute / 60) + lon / 15 ) % 24
+    vals  = 1490 / (hmf2 + 176)
+    vals -= 0.6*np.sin((loctime-5) * pi/12)
+    vals *= np.sqrt(nmf2) * 1.11355287e-5
+    return vals
+
+def plot(file, opt, outpath='.', archive_path='.'):
 
     if opt['scheme'] == 'light':
         text_color       = (0.0, 0.0, 0.0)
@@ -61,7 +121,6 @@ def plot(file, opt, outpath='.'):
 
     print(file)
     nc_fid = Dataset(file, 'r', format='NETCDF4')
-
     lon = nc_fid.variables[opt['lonvar']][:]
     lat = nc_fid.variables[opt['latvar']][:]
 
@@ -87,7 +146,6 @@ def plot(file, opt, outpath='.'):
 
     # now make the plots
     for i, plot in enumerate(opt['plots']):
-
         # get axis object
         ax = plots[i]
 
@@ -99,15 +157,24 @@ def plot(file, opt, outpath='.'):
         try:
             # get data and add cyclic point
             if plot['variable'] == "__MUF__":
-                hmf2 = nc_fid.variables[plot['hmf2_var']][:]
-                nmf2 = nc_fid.variables[plot['nmf2_var']][:]
-                ut = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
-                loctime = ( (ut.hour + ut.minute / 60) + lon / 15 ) % 24
-                vals  = 1490 / (hmf2 + 176)
-                vals -= 0.6*np.sin((loctime-5) * pi/12)
-                vals *= np.sqrt(nmf2) * 1.11355287e-5
+                vals = get_muf(nc_fid, plot, opt)
             else:
                 vals = nc_fid.variables[plot['variable']][:]
+
+            try:
+                if plot['type'] == 'anomaly':
+                    print('anomaly')
+                    mean_vals = get_n_day_mean(archive_path, plot, opt,
+                                       datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format']))
+                    print(mean_vals)
+                    vals -= mean_vals
+                elif plot['type'] == 'mean':
+                    print('mean')
+                    mean_vals = get_n_day_mean(archive_path, plot, opt,
+                                       datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format']))
+                    vals = mean_vals
+            except:
+                pass
 
             vals *= plot['scale']
             vals, clon = cutil.add_cyclic_point(vals, coord=lon)
@@ -149,7 +216,7 @@ def plot(file, opt, outpath='.'):
             # plot title
             ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color, \
                          fontfamily=opt['fontfamily'])
-
+            print('done {}'.format(i))
         except Exception as e:
             print('Error while drawing plot {}'.format(i))
             print(e)
@@ -172,12 +239,13 @@ def plot(file, opt, outpath='.'):
 
 def main():
     parser = ArgumentParser(description='plot tec, nmf2, hmf2', formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-c', '--config',  help='yaml config', type=str, required=True)
-    parser.add_argument('-f', '--file',    help='filename', type=str, default='')
-    parser.add_argument('-p', '--path',    help='path to files (also requires -r, overrides -f)', type=str, default='')
-    parser.add_argument('-r', '--prefix',  help='file prefix (used with -p) -- will plot all path/prefix*.nc files', type=str, default='')
-    parser.add_argument('-t', '--tasks',   help='parallel plotting tasks (only used with -p)', type=int, default=1)
-    parser.add_argument('-o', '--outpath', help='output path', type=str, default='.')
+    parser.add_argument('-c', '--config',   help='yaml config', type=str, required=True)
+    parser.add_argument('-f', '--file',     help='filename', type=str, default='')
+    parser.add_argument('-p', '--path',     help='path to files (also requires -r, overrides -f)', type=str, default='')
+    parser.add_argument('-r', '--prefix',   help='file prefix (used with -p) -- will plot all path/prefix*.nc files', type=str, default='')
+    parser.add_argument('-t', '--tasks',    help='parallel plotting tasks (only used with -p)', type=int, default=1)
+    parser.add_argument('-o', '--outpath',  help='output path', type=str, default='.')
+    parser.add_argument('-a', '--archpath', help='archive path for anomaly plots', type=str, default='.')
     args = parser.parse_args()
 
     try:
@@ -185,9 +253,9 @@ def main():
         if args.path != "":
             with Pool(processes=args.tasks) as p:
                 files = glob.glob("{}/{}*.nc".format(args.path, args.prefix))
-                p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath)))
+                p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath), itertools.repeat(args.archpath)))
         else:
-            plot(args.file, opt, args.outpath)
+            plot(args.file, opt, args.outpath, args.archpath)
     except Exception as e:
         print(e)
         pass
