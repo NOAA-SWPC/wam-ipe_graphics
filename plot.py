@@ -1,6 +1,7 @@
 from __future__ import print_function
+import traceback
 import matplotlib as mpl
-#mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset
@@ -18,30 +19,31 @@ import yaml
 import re
 import itertools
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+import matplotlib.colors as mcolors
+from os.path import basename
 
 def get_full_archive_path(archive_path, dt, formatter):
     search_dt = dt.replace(minute=0, second=0)
 
-    if   search_dt.hour < 3:
+    if   search_dt.hour < 3  or (search_dt.hour == 3  and search_dt.minute == 0):
         search_dt = search_dt.replace(hour=0)
-    elif search_dt.hour < 9:
+    elif search_dt.hour < 9  or (search_dt.hour == 9  and search_dt.minute == 0):
         search_dt = search_dt.replace(hour=6)
-    elif search_dt.hour < 15:
+    elif search_dt.hour < 15 or (search_dt.hour == 15 and search_dt.minute == 0):
         search_dt = search_dt.replace(hour=12)
-    elif search_dt.hour < 21:
+    elif search_dt.hour < 21 or (search_dt.hour == 21 and search_dt.minute == 0):
         search_dt = search_dt.replace(hour=18)
     else:
         search_dt = search_dt.replace(day=search_dt.day+1, hour=0)
 
     return '{}/{}'.format(archive_path, search_dt.strftime(formatter))
 
-def get_n_day_mean(archive_path, plot, opt, dt, days=30):
+def get_n_day_mean(archive_path, plot, opt, dt, days=30, day_offset=0):
     variable = plot['variable']
     archive_path_fmt = plot['arch_path_fmt']
     archive_file_fmt = plot['arch_file_fmt']
-
     for td in range(1,days+1):
-        search_dt = dt - timedelta(days=td)
+        search_dt = dt - timedelta(days=td+day_offset)
         path = get_full_archive_path(archive_path, search_dt, archive_path_fmt)
         file = '{}{}'.format(path, search_dt.strftime(archive_file_fmt))
         try:
@@ -65,7 +67,6 @@ def get_n_day_mean(archive_path, plot, opt, dt, days=30):
                 ds.close()
             except:
                 pass
-    print('count',count)
     return sum_data/count
 
 def replace_all(string, opt, nc_fid):
@@ -75,11 +76,11 @@ def replace_all(string, opt, nc_fid):
 
 def replace_text(string, replace_text, opt, nc_fid):
     if replace_text.lower() == "plot_vars":
-        output = "-".join( \
-                      [plot['variable'].strip('_') for plot in opt['plots'] \
+        output = "-".join(
+                      [plot['variable'].strip('_') for plot in opt['plots']
                       if plot['visible'] == True ])
     elif replace_text[-3:].lower() == '_ts':
-        dt = datetime.strptime(nc_fid.getncattr(opt['{}_var'.format(replace_text.lower())]), \
+        dt = datetime.strptime(nc_fid.getncattr(opt['{}_var'.format(replace_text.lower())]),
                          opt['metadata_ts_format'])
         output = dt.strftime(opt['{}_format'.format(replace_text.lower())])
     else:
@@ -119,106 +120,140 @@ def plot(file, opt, outpath='.', archive_path='.'):
         background_color = (0.9, 0.9, 0.9)
         land_color       = (0.0, 0.0, 0.0)
 
-    print(file)
-    nc_fid = Dataset(file, 'r', format='NETCDF4')
-    lon = nc_fid.variables[opt['lonvar']][:]
-    lat = nc_fid.variables[opt['latvar']][:]
-
     fig = plt.figure(figsize=opt['figsize'], facecolor=background_color)
     if opt['projection']['type'] == 'PlateCarree':
         if opt['projection']['rotating']:
-            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['rotating_var']), \
+            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['rotating_var']),
                                    opt['metadata_ts_format'])
             central_longitude = -(dt.hour*60+dt.minute)*360/(60*24)
             proj = ccrs.PlateCarree(central_longitude=opt['projection']['central_longitude']+central_longitude)
         else:
             proj = ccrs.PlateCarree(central_longitude=opt['projection']['central_longitude'])
         tproj = ccrs.PlateCarree()
+    elif opt['projection']['type'] == 'Orthographic':
+        proj  = ccrs.NearsidePerspective(central_longitude=opt['projection']['central_longitude'],
+                                         central_latitude =opt['projection']['central_latitude'])
+#        tproj = ccrs.Geodetic()
+        tproj = ccrs.PlateCarree()
     else:
         print('{} projection invalid!'.format(opt['projection']['type']))
         raise
 
-    plots = fig.subplots(opt['shape'][0], opt['shape'][1], \
+    plots = fig.subplots(opt['shape'][0], opt['shape'][1],
                          subplot_kw=dict(projection=proj))
     if type(plots) == np.ndarray: plots = plots.flatten()
     else: plots = [plots]
-    fig.subplots_adjust(left=0.06, right=0.98, bottom=0.06, top=0.95, wspace=0.1, hspace=0.15)
+    if opt['projection']['type'] == 'Orthographic':
+        fig.subplots_adjust(left=-0.1, right=0.98, bottom=0.06, top=0.90, wspace=0.01, hspace=0.10)
+    else:
+        fig.subplots_adjust(left=0.06, right=0.98, bottom=0.06, top=0.95, wspace=0.1, hspace=0.15)
 
     # now make the plots
-    for i, plot in enumerate(opt['plots']):
-        # get axis object
-        ax = plots[i]
-
+    for ax, plot in zip(plots, opt['plots']):
         # check if visible
         if not plot['visible']:
             ax.set_visible(False)
             continue
 
         try:
+            try:
+                if plot['use_arch']:
+                    tfile = '{}/{}'.format(archive_path, basename(file))
+            except:
+                tfile = file
+            nc_fid = Dataset(tfile, 'r', format='NETCDF4')
+            lon = nc_fid.variables[opt['lonvar']][:]
+            lat = nc_fid.variables[opt['latvar']][:]
+            if 'trim_lats' in opt and opt['trim_lats']:
+                lat = lat[1:-1]    
+
             # get data and add cyclic point
             if plot['variable'] == "__MUF__":
                 vals = get_muf(nc_fid, plot, opt)
             else:
-                vals = nc_fid.variables[plot['variable']][:]
+                if 'level' in plot:
+                    vals = nc_fid.variables[plot['variable']][plot['level']]
+                else:
+                    vals = nc_fid.variables[plot['variable']][:]
 
             try:
+                cur_dt = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
+                start_dt = datetime.strptime(nc_fid.getncattr('init_date'), opt['metadata_ts_format'])
+                offset = (cur_dt-start_dt).days
+                if 'init_var' in plot:
+                    init_dt = datetime.strptime(nc_fid.getncattr(plot['init_var']),opt['metadata_ts_format'])
+                    offset = (cur_dt - init_dt).days
                 if plot['type'] == 'anomaly':
-                    print('anomaly')
-                    mean_vals = get_n_day_mean(archive_path, plot, opt,
-                                       datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format']))
-                    print(mean_vals)
+                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
                     vals -= mean_vals
+                    #print(vals.min(), vals.max())
+                elif plot['type'] == 'anomalypct':
+                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
+                    vals = 100*(vals - mean_vals)/mean_vals
+                    #print(vals.min(), vals.max())
                 elif plot['type'] == 'mean':
-                    print('mean')
-                    mean_vals = get_n_day_mean(archive_path, plot, opt,
-                                       datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format']))
+                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
                     vals = mean_vals
-            except:
+            except Exception as e:
+                #traceback.print_exc()
                 pass
 
             vals *= plot['scale']
+            if 'trim_lats' in opt and opt['trim_lats']:
+                vals = vals[1:-1,:]
             vals, clon = cutil.add_cyclic_point(vals, coord=lon)
 
             # plot
+#            if plot['cmap'] == 'cividis':
+#                colors1 = plt.cm.cividis(np.linspace(0, 1, 128))
+#                colors2 = plt.cm.plasma(np.linspace(0, 1, 128))
+#                colors = np.vstack((colors1,np.flip(colors2, axis=0)))
+#                cmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+#            else:
             cmap = plt.get_cmap(plot['cmap'],256)
             contour_linspace = np.linspace(plot['min'],plot['max'],opt['ncontours'])
             tick_linspace    = np.linspace(plot['min'],plot['max'],plot['nticks'])
-            contour_plot = ax.contourf(clon, lat, vals, contour_linspace, \
+            contour_plot = ax.contourf(clon, lat, vals, contour_linspace,
                                         extend=plot['extend'], transform=tproj, cmap=cmap)
 
             # all the colorbar stuff
             cax, kw = mpl.colorbar.make_axes(ax,cmap=cmap,pad=0.03,shrink=0.6)
             cb=fig.colorbar(contour_plot,cax=cax,ticks=tick_linspace,**kw)
-            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'], \
+            cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'],
                          fontfamily=opt['fontfamily'])
             cb.outline.set_edgecolor(edge_color)
             plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color=text_color)
 
             # coastlines and continents
             ax.coastlines(alpha=0.1)
-            ax.add_feature(cfeature.LAND, facecolor=land_color, zorder=3, alpha=0.1)
+            ax.add_feature(cfeature.LAND, facecolor=land_color, zorder=3, alpha=0.25)
 
             # gridlines
-            gl = ax.gridlines(alpha=0.3,draw_labels=True)
-            gl.xlabels_top = False
-            gl.ylabels_right = False
-            gl.xlines = False
-            gl.ylines = False
-            gl.xformatter = LONGITUDE_FORMATTER
-            gl.yformatter = LATITUDE_FORMATTER
-            label_style = {'size': opt['axis_label_size'], 'color': text_color, \
-                           'fontfamily': opt['fontfamily']}
-            gl.xlabel_style = label_style
-            gl.ylabel_style = label_style
+            if 'gridline' in opt and opt['gridline']:
+                gl = ax.gridlines(alpha=0.3,draw_labels=True)
+                gl.top_labels = False
+                gl.right_labels = False
+                gl.xlines = False
+                gl.ylines = False
+                gl.xformatter = LONGITUDE_FORMATTER
+                gl.yformatter = LATITUDE_FORMATTER
+                label_style = {'size': opt['axis_label_size'], 'color': text_color,
+                               'fontfamily': opt['fontfamily']}
+                gl.xlabel_style = label_style
+                gl.ylabel_style = label_style
 
-            #ax.set_global()
+            if opt['projection']['type'] == 'Orthographic':
+                ax.set_global()
+
+            if 'extent' in plot:
+                ax.set_extent(plot['extent'], crs=tproj)
 
             # plot title
-            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color, \
+            ax.set_title(plot['title'], fontsize=opt['title_size'], color=text_color,
                          fontfamily=opt['fontfamily'])
-            print('done {}'.format(i))
+            #print('done {}'.format(i))
         except Exception as e:
-            print('Error while drawing plot {}'.format(i))
+#            print('Error while drawing plot {}'.format(i))
             print(e)
             pass
 
@@ -226,11 +261,11 @@ def plot(file, opt, outpath='.', archive_path='.'):
     if 'texts' in opt:
         for text in opt['texts']:
             output_string = replace_all(text['text'], opt, nc_fid)
-            fig.text(text['x_loc'], text['y_loc'], output_string, \
-                     fontsize=text['size'], horizontalalignment=text['align'], \
+            fig.text(text['x_loc'], text['y_loc'], output_string,
+                     fontsize=text['size'], horizontalalignment=text['align'],
                      color=text_color, fontfamily=opt['fontfamily'])
 
-#    plt.show()
+    #plt.show()
     filename = [s.upper() for s in replace_all(opt['output_format'], opt, nc_fid).split(".")]
     filename[-1] = filename[-1].lower()
     filename = ".".join(filename)

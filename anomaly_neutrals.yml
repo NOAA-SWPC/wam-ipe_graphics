@@ -8,10 +8,11 @@ cbar_label_size: 14
 axis_label_size: 12
 fontfamily: monospace
 land_alpha: 0.25
+trim_lats: true
 
 # If you want to use metadata from the netcdf file, you can enclose values
-# in double underscores (e.g. __myvalue__). There needs to be a 
-# corresponding yaml value such as 
+# in double underscores (e.g. __myvalue__). There needs to be a
+# corresponding yaml value such as
 # myvalue_var: var_name_in_netcdf
 #
 # Additionally, if you want to format a datetime out of the metadata,
@@ -47,9 +48,6 @@ init_ts_format: "%b %-d %Y %H UTC"
 cyc_ts_var: init_date
 cyc_ts_format: "%H"
 
-output_ts_var: fcst_date
-output_ts_format: "%Y%m%d%H%M"
-
 initoutput_ts_var: init_date
 initoutput_ts_format: "%Y%m%dT%H%M"
 
@@ -76,8 +74,6 @@ figsize:
   - 16
   - 9
 
-gridline: true
-
 # nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
 shape:
   - 2
@@ -86,70 +82,53 @@ shape:
 # ordering of plots goes as if you were reading text: left to right, and
 # then top to bottom
 plots:
+  - visible: false
   - visible: true
-    title: "Total Electron Content (TEC)"
-    variable: tec
-    cbar_label: "TECu"
-    nticks: 6
-    cmap: cividis
-    scale: 1.0
-    min: 0.
-    max: 30.
+    title: "400km Neutral Density"
+    variable: den400
+    cbar_label: "10$^{-12}$ kg/m$^3$"
+    nticks: 4
+    cmap: inferno
+    scale: 1.e+12
+    min: 0.0
+    max: 8.0
     extend: max
-
   - visible: true
-    title: "Maximum Usable Frequency (MUF)"
-    variable: "__MUF__"
-    nmf2_var: NmF2
-    hmf2_var: HmF2
-    ut_var: fcst_date
-    cbar_label: "MHz"
+    title: "O/N$_2$ Ratio"
+    variable: ON2
+    cbar_label: "ratio"
     nticks: 6
-    cmap: plasma
+    cmap: magma
     scale: 1.0
-    min: 0
-    max: 50
-    extend: max
-
+    min: 0.2
+    max: 1.1
+    extend: both
   - visible: true
-    title: "Total Electron Content (TEC) Anomaly"
-    variable: tec
-    cbar_label: "TEC"
+    title: "400km Neutral Density Anomaly"
+    variable: den400
+    type: anomalypct
+    cbar_label: "percent"
     nticks: 6
     cmap: bwr
     scale: 1.0
-    min: -20
-    max: 20
+    min: -100
+    max: 100
     extend: both
-    type: anomaly
-    arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
-    arch_file_fmt: "ipe05.%Y%m%d_%H%M%S.nc"
     ut_var: fcst_date
     init_var: init_date
-
-  - visible: true
-    title: "Maximum Usable Frequency (MUF) Anomaly"
-    variable: "__MUF__"
-    type: anomaly
     arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
-    arch_file_fmt: "ipe05.%Y%m%d_%H%M%S.nc"
-    nmf2_var: NmF2
-    hmf2_var: HmF2
-    ut_var: fcst_date
-    init_var: init_date
-    cbar_label: "MUF"
-    nticks: 6
-    cmap: bwr
-    scale: 1.0
-    min: -25
-    max: 25
-    extend: both
+    arch_file_fmt: "gsm05.%Y%m%d_%H%M%S.nc"
 
 texts:
-  - text: "Global Ionosphere Valid at: __fcst_ts__"
-    x_loc: 0.5
-    y_loc: 0.955
+  - text: "Neutral Atmosphere"
+    x_loc: 0.25
+    y_loc: 0.78
     size: 24
+    align: center
+  - text: "Valid at: __fcst_ts__"
+    x_loc: 0.25
+    y_loc: 0.73
+    size: 18
     align: center
   - text: "Space Weather Prediction Center"
     x_loc: 0.015
@@ -161,3 +140,4 @@ texts:
     y_loc: 0.03
     size: 12
     align: right
+
