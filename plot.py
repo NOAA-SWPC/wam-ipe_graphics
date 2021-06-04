@@ -102,7 +102,7 @@ def get_muf(nc_fid, plot, opt):
     vals *= np.sqrt(nmf2) * 1.11355287e-5
     return vals
 
-def plot(file, opt, outpath='.', archive_path='.'):
+def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
 
     if opt['scheme'] == 'light':
         text_color       = (0.0, 0.0, 0.0)
@@ -183,17 +183,15 @@ def plot(file, opt, outpath='.', archive_path='.'):
                 if 'init_var' in plot:
                     init_dt = datetime.strptime(nc_fid.getncattr(plot['init_var']),opt['metadata_ts_format'])
                     offset = (cur_dt - init_dt).days
+                mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=archive_days, day_offset=offset)
                 if plot['type'] == 'anomaly':
-                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
                     vals -= mean_vals
-                    #print(vals.min(), vals.max())
                 elif plot['type'] == 'anomalypct':
-                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
                     vals = 100*(vals - mean_vals)/mean_vals
-                    #print(vals.min(), vals.max())
                 elif plot['type'] == 'mean':
-                    mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=10, day_offset=offset)
                     vals = mean_vals
+                #print(vals.min(), vals.max())
+
             except Exception as e:
                 #traceback.print_exc()
                 pass
@@ -281,6 +279,7 @@ def main():
     parser.add_argument('-t', '--tasks',    help='parallel plotting tasks (only used with -p)', type=int, default=1)
     parser.add_argument('-o', '--outpath',  help='output path', type=str, default='.')
     parser.add_argument('-a', '--archpath', help='archive path for anomaly plots', type=str, default='.')
+    parser.add_argument('-d', '--archdays', help='days to search backwards for averaging', type=int, default=10)
     args = parser.parse_args()
 
     try:
@@ -288,9 +287,9 @@ def main():
         if args.path != "":
             with Pool(processes=args.tasks) as p:
                 files = glob.glob("{}/{}*.nc".format(args.path, args.prefix))
-                p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath), itertools.repeat(args.archpath)))
+                p.starmap(plot,zip(files, itertools.repeat(opt), itertools.repeat(args.outpath), itertools.repeat(args.archpath), itertools.repeat(args.archdays)))
         else:
-            plot(args.file, opt, args.outpath, args.archpath)
+            plot(args.file, opt, args.outpath, args.archpath, args.archdays)
     except Exception as e:
         print(e)
         pass
