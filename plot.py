@@ -23,20 +23,18 @@ import matplotlib.colors as mcolors
 from os.path import basename
 
 def get_full_archive_path(archive_path, dt, formatter):
-    search_dt = dt.replace(minute=0, second=0)
-
-    if   search_dt.hour < 3  or (search_dt.hour == 3  and search_dt.minute == 0):
-        search_dt = search_dt.replace(hour=0)
-    elif search_dt.hour < 9  or (search_dt.hour == 9  and search_dt.minute == 0):
-        search_dt = search_dt.replace(hour=6)
-    elif search_dt.hour < 15 or (search_dt.hour == 15 and search_dt.minute == 0):
-        search_dt = search_dt.replace(hour=12)
-    elif search_dt.hour < 21 or (search_dt.hour == 21 and search_dt.minute == 0):
-        search_dt = search_dt.replace(hour=18)
+    if   dt.hour < 3  or (dt.hour == 3  and dt.minute == 0):
+        dt = dt.replace(hour=0)
+    elif dt.hour < 9  or (dt.hour == 9  and dt.minute == 0):
+        dt = dt.replace(hour=6)
+    elif dt.hour < 15 or (dt.hour == 15 and dt.minute == 0):
+        dt = dt.replace(hour=12)
+    elif dt.hour < 21 or (dt.hour == 21 and dt.minute == 0):
+        dt = dt.replace(hour=18)
     else:
-        search_dt = search_dt.replace(day=search_dt.day+1, hour=0)
+        dt = dt.replace(day=dt.day+1, hour=0)
 
-    return '{}/{}'.format(archive_path, search_dt.strftime(formatter))
+    return '{}/{}'.format(archive_path, dt.strftime(formatter))
 
 def get_n_day_mean(archive_path, plot, opt, dt, days=30, day_offset=0):
     variable = plot['variable']

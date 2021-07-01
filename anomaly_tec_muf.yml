@@ -125,7 +125,7 @@ plots:
     arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
     arch_file_fmt: "ipe05.%Y%m%d_%H%M%S.nc"
     ut_var: fcst_date
-    init_var: init_date
+    init_var: start_date
 
   - visible: true
     title: "Maximum Usable Frequency (MUF) Anomaly"
@@ -136,7 +136,7 @@ plots:
     nmf2_var: NmF2
     hmf2_var: HmF2
     ut_var: fcst_date
-    init_var: init_date
+    init_var: start_date
     cbar_label: "MUF"
     nticks: 6
     cmap: bwr

@@ -115,7 +115,7 @@ plots:
     max: 100
     extend: both
     ut_var: fcst_date
-    init_var: init_date
+    init_var: start_date
     arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
     arch_file_fmt: "gsm05.%Y%m%d_%H%M%S.nc"
 
