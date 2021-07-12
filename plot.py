@@ -221,12 +221,12 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
             plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color=text_color)
 
             # coastlines and continents
-            ax.coastlines(alpha=0.1)
-            ax.add_feature(cfeature.LAND, facecolor=land_color, zorder=3, alpha=0.25)
+            ax.coastlines(alpha=opt['coastline_alpha'])
+            ax.add_feature(cfeature.LAND, facecolor=land_color, zorder=3, alpha=opt['land_alpha'])
 
             # gridlines
             if 'gridline' in opt and opt['gridline']:
-                gl = ax.gridlines(alpha=0.3,draw_labels=True)
+                gl = ax.gridlines(alpha=opt['gridline_alpha'],draw_labels=True)
                 gl.top_labels = False
                 gl.right_labels = False
                 gl.xlines = False

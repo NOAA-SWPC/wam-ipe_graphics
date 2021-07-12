@@ -7,6 +7,7 @@ lonvar: lon
 cbar_label_size: 14
 axis_label_size: 12
 fontfamily: monospace
+coastline_alpha: 0.2
 land_alpha: 0.25
 
 # If you want to use metadata from the netcdf file, you can enclose values
@@ -77,6 +78,7 @@ figsize:
   - 9
 
 gridline: true
+gridline_alpha: 0.3
 
 # nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
 shape:

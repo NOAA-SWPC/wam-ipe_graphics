@@ -7,6 +7,7 @@ lonvar: lon
 cbar_label_size: 14
 axis_label_size: 12
 fontfamily: monospace
+coastline_alpha: 0.2
 land_alpha: 0.25
 trim_lats: true
 
@@ -73,6 +74,9 @@ projection:
 figsize:
   - 16
   - 9
+
+gridline: true
+gridline_alpha: 0.3
 
 # nrows*ncols (shape[0]*shape[1]) should be >= to the total number of plots
 shape:
