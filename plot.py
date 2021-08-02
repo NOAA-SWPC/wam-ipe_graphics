@@ -32,7 +32,7 @@ def get_full_archive_path(archive_path, dt, formatter):
     elif dt.hour < 21 or (dt.hour == 21 and dt.minute == 0):
         dt = dt.replace(hour=18)
     else:
-        dt = dt.replace(day=dt.day+1, hour=0)
+        dt = dt.replace(hour=0) + timedelta(days=1)
 
     return '{}/{}'.format(archive_path, dt.strftime(formatter))
 
