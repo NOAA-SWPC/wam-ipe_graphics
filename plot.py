@@ -90,14 +90,14 @@ def replace_text(string, replace_text, opt, nc_fid):
         return string.replace('__{}__'.format(replace_text), output)
 
 def get_muf(nc_fid, plot, opt):
-    lon = nc_fid.variables[opt['lonvar']][:]
-    hmf2 = nc_fid.variables[plot['hmf2_var']][:]
-    nmf2 = nc_fid.variables[plot['nmf2_var']][:]
-    ut = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
+    lon = 0
+    hmf2 = 296.6896
+    nmf2 = 270860290000.0
+    ut = datetime(2021,11,7,7,0)
     loctime = ( (ut.hour + ut.minute / 60) + lon / 15 ) % 24
     vals  = 1490 / (hmf2 + 176)
     vals -= 0.6*np.sin((loctime-5) * pi/12)
-    vals *= np.sqrt(nmf2) * 1.11355287e-5
+    vals *= np.sqrt(nmf2) / 1.11355287e+5
     return vals
 
 def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
