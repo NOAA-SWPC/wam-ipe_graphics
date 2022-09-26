@@ -1,7 +1,7 @@
 from __future__ import print_function
 import traceback
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset
@@ -20,9 +20,9 @@ import re
 import itertools
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import matplotlib.colors as mcolors
-from os.path import basename
+from os.path import basename, exists
 
-def get_full_archive_path(archive_path, dt, formatter):
+def get_full_archive_path(archive_path, path_fmt, dt):
     if   dt.hour < 3  or (dt.hour == 3  and dt.minute == 0):
         dt = dt.replace(hour=0)
     elif dt.hour < 9  or (dt.hour == 9  and dt.minute == 0):
@@ -34,38 +34,22 @@ def get_full_archive_path(archive_path, dt, formatter):
     else:
         dt = dt.replace(hour=0) + timedelta(days=1)
 
-    return '{}/{}'.format(archive_path, dt.strftime(formatter))
+    return '{}/{}'.format(archive_path, dt.strftime(path_fmt))
 
-def get_n_day_mean(archive_path, plot, opt, dt, days=30, day_offset=0):
-    variable = plot['variable']
-    archive_path_fmt = plot['arch_path_fmt']
-    archive_file_fmt = plot['arch_file_fmt']
-    for td in range(1,days+1):
-        search_dt = dt - timedelta(days=td+day_offset)
-        path = get_full_archive_path(archive_path, search_dt, archive_path_fmt)
-        file = '{}{}'.format(path, search_dt.strftime(archive_file_fmt))
-        try:
-            ds = Dataset(file)
-        except:
-            pass
-        if td == 1:
-            if variable == '__MUF__':
-                sum_data = get_muf(ds, plot, opt)
-            else:
-                sum_data = ds.variables[variable][:]
-            count = 1
-            ds.close()
-        else:
-            try:
-                if variable == '__MUF__':
-                    sum_data += get_muf(ds, plot, opt)
-                else:
-                    sum_data += ds.variables[variable][:]
-                count += 1
-                ds.close()
-            except:
-                pass
-    return sum_data/count
+def get_archive_file(archive_path, path_fmt, file_fmt, dt):
+    return '{}{}'.format(get_full_archive_path(archive_path, path_fmt, dt), dt.strftime(file_fmt))
+
+def get_nday_median(archive_path, plot, opt, sdate, ndays=30, offset=0):
+    var = plot['variable']
+    path_fmt = plot['arch_path_fmt']
+    file_fmt = plot['arch_file_fmt']
+    dates = [sdate - timedelta(days=i) for i in range(1-offset,ndays+1-offset)]
+    files = [get_archive_file(archive_path, path_fmt, file_fmt, dt) for dt in dates]
+    if var == '__MUF__':
+        data = [get_muf(Dataset(f), plot, opt) for f in files if exists(f)]
+    else:
+        data = [Dataset(f).variables[var][:] for f in files if exists(f)]
+    return np.median(data, axis=0)
 
 def replace_all(string, opt, nc_fid):
     for r in re.findall(r'__([^_].*?[^_])__',string):
@@ -90,18 +74,17 @@ def replace_text(string, replace_text, opt, nc_fid):
         return string.replace('__{}__'.format(replace_text), output)
 
 def get_muf(nc_fid, plot, opt):
-    lon = 0
-    hmf2 = 296.6896
-    nmf2 = 270860290000.0
-    ut = datetime(2021,11,7,7,0)
+    lon = nc_fid.variables[opt['lonvar']][:]
+    hmf2 = nc_fid.variables[plot['hmf2_var']][:]
+    nmf2 = nc_fid.variables[plot['nmf2_var']][:]
+    ut = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
     loctime = ( (ut.hour + ut.minute / 60) + lon / 15 ) % 24
     vals  = 1490 / (hmf2 + 176)
     vals -= 0.6*np.sin((loctime-5) * pi/12)
     vals *= np.sqrt(nmf2) / 1.11355287e+5
     return vals
 
-def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
-
+def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
     if opt['scheme'] == 'light':
         text_color       = (0.0, 0.0, 0.0)
         edge_color       = (0.0, 0.4, 0.0)
@@ -143,6 +126,8 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
     else: plots = [plots]
     if opt['projection']['type'] == 'Orthographic':
         fig.subplots_adjust(left=-0.1, right=0.98, bottom=0.06, top=0.90, wspace=0.01, hspace=0.10)
+    elif 'suptitle' in opt:
+        fig.subplots_adjust(left=0.2, right=0.9, top=0.85)
     else:
         fig.subplots_adjust(left=0.06, right=0.98, bottom=0.06, top=0.95, wspace=0.1, hspace=0.15)
 
@@ -163,7 +148,7 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
             lon = nc_fid.variables[opt['lonvar']][:]
             lat = nc_fid.variables[opt['latvar']][:]
             if 'trim_lats' in opt and opt['trim_lats']:
-                lat = lat[1:-1]    
+                lat = lat[1:-1]
 
             # get data and add cyclic point
             if plot['variable'] == "__MUF__":
@@ -175,23 +160,23 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
                     vals = nc_fid.variables[plot['variable']][:]
 
             try:
-                cur_dt = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
-                start_dt = datetime.strptime(nc_fid.getncattr('init_date'), opt['metadata_ts_format'])
-                offset = (cur_dt-start_dt).days
-                if 'init_var' in plot:
-                    init_dt = datetime.strptime(nc_fid.getncattr(plot['init_var']),opt['metadata_ts_format'])
-                    offset = (cur_dt - init_dt).days
-                mean_vals = get_n_day_mean(archive_path, plot, opt, cur_dt, days=archive_days, day_offset=offset)
-                if plot['type'] == 'anomaly':
-                    vals -= mean_vals
-                elif plot['type'] == 'anomalypct':
-                    vals = 100*(vals - mean_vals)/mean_vals
-                elif plot['type'] == 'mean':
-                    vals = mean_vals
-                #print(vals.min(), vals.max())
-
+                if 'type' in plot:
+                    cur_dt = datetime.strptime(nc_fid.getncattr(plot['ut_var']), opt['metadata_ts_format'])
+                    start_dt = datetime.strptime(nc_fid.getncattr('init_date'), opt['metadata_ts_format'])
+                    offset = (cur_dt-start_dt).days
+                    if 'init_var' in plot:
+                        init_dt = datetime.strptime(nc_fid.getncattr(plot['init_var']),opt['metadata_ts_format'])
+                        offset = (cur_dt - init_dt).days
+                    median_vals = get_nday_median(archive_path, plot, opt,
+                                                  cur_dt, ndays=archive_days, offset=offset)
+                    if plot['type'] == 'anomaly':
+                        vals -= median_vals
+                    elif plot['type'] == 'anomalypct':
+                        vals = 100*(vals - median_vals)/median_vals
+                    elif plot['type'] == 'median':
+                        vals = median_vals
             except Exception as e:
-                #traceback.print_exc()
+                traceback.print_exc()
                 pass
 
             vals *= plot['scale']
@@ -200,12 +185,6 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
             vals, clon = cutil.add_cyclic_point(vals, coord=lon)
 
             # plot
-#            if plot['cmap'] == 'cividis':
-#                colors1 = plt.cm.cividis(np.linspace(0, 1, 128))
-#                colors2 = plt.cm.plasma(np.linspace(0, 1, 128))
-#                colors = np.vstack((colors1,np.flip(colors2, axis=0)))
-#                cmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
-#            else:
             cmap = plt.get_cmap(plot['cmap'],256)
             contour_linspace = np.linspace(plot['min'],plot['max'],opt['ncontours'])
             tick_linspace    = np.linspace(plot['min'],plot['max'],plot['nticks'])
@@ -250,7 +229,8 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
             #print('done {}'.format(i))
         except Exception as e:
 #            print('Error while drawing plot {}'.format(i))
-            print(e)
+#            traceback.print_exc()
+#            print(e)
             pass
 
     # add text if the plot definition includes it
@@ -261,11 +241,16 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=10):
                      fontsize=text['size'], horizontalalignment=text['align'],
                      color=text_color, fontfamily=opt['fontfamily'])
 
-    #plt.show()
+    if 'suptitle' in opt:
+        output_string = replace_all(opt['suptitle'], opt, nc_fid)
+        fig.suptitle(output_string, fontsize=24, color=text_color)
+
     filename = [s.upper() for s in replace_all(opt['output_format'], opt, nc_fid).split(".")]
     filename[-1] = filename[-1].lower()
     filename = ".".join(filename)
+
     plt.savefig("{}/{}".format(outpath,filename), facecolor=background_color)
+
     plt.close()
 
 def main():
@@ -277,7 +262,7 @@ def main():
     parser.add_argument('-t', '--tasks',    help='parallel plotting tasks (only used with -p)', type=int, default=1)
     parser.add_argument('-o', '--outpath',  help='output path', type=str, default='.')
     parser.add_argument('-a', '--archpath', help='archive path for anomaly plots', type=str, default='.')
-    parser.add_argument('-d', '--archdays', help='days to search backwards for averaging', type=int, default=10)
+    parser.add_argument('-d', '--archdays', help='days to search backwards for averaging', type=int, default=30)
     args = parser.parse_args()
 
     try:
