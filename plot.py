@@ -1,7 +1,7 @@
 from __future__ import print_function
 import traceback
 import matplotlib as mpl
-#mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset

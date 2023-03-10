@@ -90,18 +90,18 @@ plots:
   - visible: true
     title: "400km Neutral Density"
     variable: den400
-    cbar_label: "10$^{-12}$ kg/m$^3$"
-    nticks: 4
+    cbar_label: "10$^{-11}$ kg/m$^3$"
+    nticks: 5
     cmap: inferno
-    scale: 1.e+12
+    scale: 1.e+11
     min: 0.0
-    max: 8.0
+    max: 2.0
     extend: max
   - visible: true
     title: "O/N$_2$ Ratio"
     variable: ON2
     cbar_label: "ratio"
-    nticks: 6
+    nticks: 4
     cmap: magma
     scale: 1.0
     min: 0.2
@@ -112,7 +112,7 @@ plots:
     variable: den400
     type: anomalypct
     cbar_label: "percent"
-    nticks: 6
+    nticks: 8
     cmap: bwr
     scale: 1.0
     min: -100

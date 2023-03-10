@@ -92,11 +92,11 @@ plots:
     title: "Total Electron Content (TEC)"
     variable: tec
     cbar_label: "TECu"
-    nticks: 6
+    nticks: 5
     cmap: cividis
     scale: 1.0
     min: 0.
-    max: 30.
+    max: 80.
     extend: max
 
   - visible: true
@@ -117,11 +117,11 @@ plots:
     title: "Total Electron Content (TEC) Anomaly"
     variable: tec
     cbar_label: "TECu"
-    nticks: 6
+    nticks: 7
     cmap: bwr
     scale: 1.0
-    min: -20
-    max: 20
+    min: -30
+    max: 30
     extend: both
     type: anomaly
     arch_path_fmt: "wfs.%Y%m%d/%H/wfs.t%Hz."
