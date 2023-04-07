@@ -21,6 +21,7 @@ import itertools
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import matplotlib.colors as mcolors
 from os.path import basename, exists
+from cartopy.feature.nightshade import Nightshade
 
 def get_full_archive_path(archive_path, path_fmt, dt):
     if   dt.hour < 3  or (dt.hour == 3  and dt.minute == 0):
@@ -104,7 +105,7 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
     fig = plt.figure(figsize=opt['figsize'], facecolor=background_color)
     if opt['projection']['type'] == 'PlateCarree':
         if opt['projection']['rotating']:
-            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['rotating_var']),
+            dt = datetime.strptime(nc_fid.getncattr(opt['projection']['ut_var']),
                                    opt['metadata_ts_format'])
             central_longitude = -(dt.hour*60+dt.minute)*360/(60*24)
             proj = ccrs.PlateCarree(central_longitude=opt['projection']['central_longitude']+central_longitude)
@@ -203,6 +204,11 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
             ax.coastlines(alpha=opt['coastline_alpha'])
             ax.add_feature(cfeature.LAND, facecolor=land_color, zorder=3, alpha=opt['land_alpha'])
 
+            # terminator
+            if 'terminator' in opt['projection'] and opt['projection']['terminator']:
+                dt = datetime.strptime(nc_fid.getncattr(opt['projection']['ut_var']), opt['metadata_ts_format'])
+                ax.add_feature(Nightshade(dt, alpha=opt['terminator_alpha']))
+
             # gridlines
             if 'gridline' in opt and opt['gridline']:
                 gl = ax.gridlines(alpha=opt['gridline_alpha'],draw_labels=True)
@@ -228,7 +234,6 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
                          fontfamily=opt['fontfamily'])
             #print('done {}'.format(i))
         except Exception as e:
-#            print('Error while drawing plot {}'.format(i))
 #            traceback.print_exc()
 #            print(e)
             pass

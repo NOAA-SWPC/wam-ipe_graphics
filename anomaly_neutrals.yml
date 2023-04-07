@@ -9,6 +9,7 @@ axis_label_size: 12
 fontfamily: monospace
 coastline_alpha: 0.2
 land_alpha: 0.25
+terminator_alpha: 0.2
 trim_lats: true
 
 # If you want to use metadata from the netcdf file, you can enclose values
@@ -63,13 +64,14 @@ cadence_var: cadence
 
 # PROJECTION
 # only valid type is PlateCarree for now
-# if rotating: true, then you need rotating_var that adheres to 
+# if rotating or terminator is true, then you need ut_var that adheres to
 # metadata_ts_format; see documentation above.
 projection:
   type: PlateCarree
   central_longitude: 0
   rotating: false
-  rotating_var: fcst_date
+  terminator: true
+  ut_var: fcst_date
 
 figsize:
   - 16
