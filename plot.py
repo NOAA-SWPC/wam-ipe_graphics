@@ -193,11 +193,12 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
                                         extend=plot['extend'], transform=tproj, cmap=cmap)
 
             # all the colorbar stuff
-            cax, kw = mpl.colorbar.make_axes(ax,cmap=cmap,pad=0.03,shrink=0.6)
+            cax, kw = mpl.colorbar.make_axes(ax,pad=0.03,shrink=0.6)
             cb=fig.colorbar(contour_plot,cax=cax,ticks=tick_linspace,**kw)
             cb.set_label(plot['cbar_label'], color=text_color, size=opt['cbar_label_size'],
                          fontfamily=opt['fontfamily'])
             cb.outline.set_edgecolor(edge_color)
+            cb.ax.set_facecolor('none')
             plt.setp(plt.getp(cb.ax.axes, 'yticklabels'), color=text_color)
 
             # coastlines and continents
@@ -235,7 +236,7 @@ def plot(file, opt, outpath='.', archive_path='.', archive_days=30):
             #print('done {}'.format(i))
         except Exception as e:
 #            traceback.print_exc()
-#            print(e)
+            print(e)
             pass
 
     # add text if the plot definition includes it
