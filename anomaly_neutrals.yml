@@ -114,7 +114,7 @@ plots:
     variable: den400
     type: anomalypct
     cbar_label: "percent"
-    nticks: 8
+    nticks: 9
     cmap: bwr
     scale: 1.0
     min: -100
